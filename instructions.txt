@@ -1,0 +1,17 @@
+# Build package...
+python setup.py sdist bdist_wheel
+
+# Download twine to upload the package which reside in dist to pypi
+pip install twine
+
+# create folder with package name
+example: moethread
+
+# add relevant files and create an __init__.py
+inside __init__.py add imports as relative imports
+
+# Upload to pypi.org
+twine upload dist/*
+# enter username and password
+
+# Note, everytime you upload, you have to make sure you assign a new version
