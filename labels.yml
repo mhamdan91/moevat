@@ -1,0 +1,14 @@
+# @mhamdan
+# Note, each class will directly map to a key on the numpad.
+
+# You can specify up to ten classes - make sure to provide short class names
+classes:
+  - 0: "dog"
+  - 1: "cat"
+  - 2: "horse"
+
+### Or you can do this if you do not want to provide human readable class names
+# classes:
+#   - 0
+#   - 1
+#   - 2

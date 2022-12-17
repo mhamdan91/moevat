@@ -1,4 +1,6 @@
 dist/
 build/
-moethread.egg-info/
+moevat.egg-info/
 venv_movevat/
+images/
+__pycache__/

@@ -24,7 +24,7 @@ def write_results(output_path: str, labels_dict: typing.Dict):
         for key, value in labels_dict.items():
             writer.writerow(value)
 
-def annotate(images_path: str, classes: typing.Dict, output_path: str='labels.csv', tooltip: bool=False, loop: bool=True):
+def annotate(images_path: str, output_path: str, config: typing.Dict, tooltip: bool=False, loop: bool=True):
     """
         https://docs.opencv.org/4.x/d4/da8/group__imgcodecs.html
 
