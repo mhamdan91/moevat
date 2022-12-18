@@ -1,4 +1,4 @@
-Moevat
+Moevat (Moe visual annotation tool)
 =======================================
 ## Table of Contents
 
