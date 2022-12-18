@@ -1,14 +1,46 @@
 # @mhamdan
+
 # Note, each class will directly map to a key on the numpad.
+# If you wish to give your classes human readable names, then
+# specify up to ten classes - make sure to provide **short** class names.
 
-# You can specify up to ten classes - make sure to provide short class names
+# ** Good class names **
 classes:
-  - 0: "dog"
-  - 1: "cat"
-  - 2: "horse"
+  0: "dog"
+  1: "cat"
+  2: "horse"
+  3: "mouse"
+  4: "rabbit"
+  5: "bird"
+  6: "car"
+  7: "human"
+  8: "elephant"
+  9: "house"
 
-### Or you can do this if you do not want to provide human readable class names
+# # ** Okay class names **
 # classes:
-#   - 0
-#   - 1
-#   - 2
+#   0: "brown dog"
+#   1: "small cat"
+#   2: "original horse"
+#   3: "black mouse"
+#   4: "white rabbit"
+#   5: "big bird"
+#   6: "red car"
+#   7: "tall human"
+#   8: "tiny elephant"
+#   9: "huge house"
+
+# # ** Bad class names **
+# classes:
+#   0: "dog is barking at the mailman"
+#   1: "cat is sleeping deeply"
+#   2: "horse is racing very fast"
+#   3: "mouse is ticking extremely fast"
+#   4: "rabbit is jumping around"
+#   5: "bird is flying"
+#   6: "car is very ice"
+#   7: "human is playing well"
+#   8: "elephant is too huge to move"
+#   9: "house without windows"
+
+
