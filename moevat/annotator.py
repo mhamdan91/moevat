@@ -164,10 +164,11 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
     
     cv2.destroyAllWindows()
     new_labeled_data = labels_dict.copy()
-    logger.info("Writing data to file...")
-    labels_dict.update(existing_labels_dict)
-    write_results(output_name, labels_dict)
-    if data_transfer in ['mv', 'cp']:
+    if new_labeled_data:
+        logger.info("Writing data to file...")
+        labels_dict.update(existing_labels_dict)
+        write_results(output_name, labels_dict)
+    if data_transfer in ['mv', 'cp'] and new_labeled_data:
         if not os.path.isdir(dst_folder):
             _dst_folder = Path(dst_folder)
             _dst_folder.mkdir(parents=True, exist_ok=True)

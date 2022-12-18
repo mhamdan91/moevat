@@ -87,7 +87,7 @@ class NotRequiredIf(click.Option):
     def __init__(self, *args, **kwargs):
         self.not_required_if = kwargs.pop('not_required_if')
         assert self.not_required_if, "'not_required_if' parameter required"
-        kwargs['help'] = (kwargs.get('help', '') + ' NOTE: This argument is required with').strip()
+        kwargs['help'] = (kwargs.get('help', '') + ' NOTE: This argument is required').strip()
         super(NotRequiredIf, self).__init__(*args, **kwargs)
 
     def handle_parse_result(self, ctx, opts, args):
@@ -123,7 +123,7 @@ class NotRequiredIf(click.Option):
                                         required_if='dst_folder',
                                         default="none",
                                         show_default=True,
-                                        help="(optional) Copy (cp) or move (mv) data from source to destination folder " \
+                                        help="(optional) Copy [cp] or move [mv] data from source to destination folder " \
                                              "after completing labeling.")
 @click.option('--window-size',  '-w',   type=int,
                                         default=60,
@@ -207,6 +207,11 @@ To use this tool you need to provide:
   session, simply click on ESCAPE.
 - If you wish to resume labeling from where you stopped last time, simply provide the labels file which
   you used in the previous session and the tool will only show images that have not been labeled yet.
+
+Example use (in a terminal run the following command):
+> moevat -i <images_dir> -o <output_file_path.csv> -t <cp_or_mv> -d <destination_folder> -l <path_to_labels.yaml>
+
+
         """)
         return
     

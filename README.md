@@ -15,6 +15,8 @@ This tool allows you to quickly label images of up to 10 classes and this is bas
 To install the library simply run the following command in a cmd, shell or whatever...
 
 ```bash
+# It's recommended to create a virtual environment
+
 # Windows
 pip install moevat
 
@@ -24,10 +26,11 @@ pip3 install moevat
 
 ## Library usage?
 To use this tool you need to provide:
+- To show usage message run the following command `moevat -u`
 - a directory containing data/images to label.
 - an output file path to store labeled data/images in and this file can only be of type [json, csv]
 - If you wish to copy or move labeled data/images after completing labeling, you must specify the
-  `data-transfer` option where (cp -> copy, and mv -> move). You also need to specify a
+  `data-transfer` option where (**cp** -> copy, and **mv** -> move). You also need to specify a
   destination folder to transfer data to, this would be specifying the `dst-folder` option.
 - If you wish to resize window size that displays image and labeling instructions, you can
   provide an integer value that is greater than 0. This value will translate into a percentage,
@@ -76,12 +79,19 @@ To use this tool you need to provide:
         9: "house without windows"
 ```
 - The tool will allow you navigate forward and backward, by default the tool allows you loop through
-  images as long as you not labeled them all. This means you can start from left -> right or
-  right -> left, i.e. from last-image --> first-image or from first-image -> last-image.
+  images as long as you not labeled them all. This means you can start from **left -> right** or
+  **right -> left**, i.e. from **last-image --> first-image** or from **first-image -> last-image**.
 - The tool will automatically cache data while you are labeling, and if you wish to end your labeling
-  session, simply click on ESCAPE.
+  session, simply click on **ESCAPE**.
 - If you wish to resume labeling from where you stopped last time, simply provide the labels file which
   you used in the previous session and the tool will only show images that have not been labeled yet.
+
+
+### Example use
+Example use (in a terminal run the following command):
+```bash
+moevat -i <images_dir> -o <output_file_path.csv> -t <cp_or_mv> -d <destination_folder> -l <path_to_labels.yaml>
+```
 
 ----------------------------------------
 Author: Hamdan, Muhammad (@mhamdan91 - ©)
