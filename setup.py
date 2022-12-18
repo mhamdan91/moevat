@@ -6,7 +6,7 @@ from pip._internal.req.req_file import parse_requirements
 VERSION = "1.0.0"
 PROJECT_DIR = os.path.dirname(os.path.realpath(__file__))
 REQUIREMENTS = parse_requirements(os.path.join(PROJECT_DIR, 'requirements.txt'), session=PipSession())
-DESCRIPTION = 'Python libary to quickly label images for up to 10 different classes.'
+DESCRIPTION = 'Python libary to quickly label data/images.'
 LONG_DESCRIPTION = open('README.md').read()
 setup(
     name="moevat",
