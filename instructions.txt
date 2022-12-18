@@ -15,3 +15,7 @@ twine upload dist/*
 # enter username and password
 
 # Note, everytime you upload, you have to make sure you assign a new version
+
+**** Local installation
+In present directory run...
+pip install -e .

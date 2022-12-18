@@ -13,16 +13,16 @@
             "justMyCode": false,
             "args":[
                 "-i",
-                "..\\images",
+                "test_data\\images",
                 "-o",
-                "..\\labels.json",
+                "test_data\\labels.json",
                 "-t",
                 "cp",
                 "-d",
-                "..\\my_labeled_data",
-                "-l",
-                "labels.yml",
-                "-u"
+                "test_data\\my_labeled_data",
+                // "-l",
+                // "labels.yml",
+                // "-u"
 
             ]
         }

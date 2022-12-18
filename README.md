@@ -27,11 +27,12 @@ pip3 install moevat
 ## Library usage?
 To use this tool you need to provide:
 - To show usage message run the following command `moevat -u`
-- a directory containing data/images to label.
-- an output file path to store labeled data/images in and this file can only be of type [json, csv]
-- If you wish to copy or move labeled data/images after completing labeling, you must specify the
+- a directory containing images to label.
+- an output file path to store labeled images in and this file can only be of type [json, csv]
+- If you mislabel an image and wish to correct this, simply go back to that image and apply the new label.
+- If you wish to copy or move labeled images after completing labeling, you must specify the
   `data-transfer` option where (**cp** -> copy, and **mv** -> move). You also need to specify a
-  destination folder to transfer data to, this would be specifying the `dst-folder` option.
+  destination folder to transfer images to, this would be specifying the `dst-folder` option.
 - If you wish to resize window size that displays image and labeling instructions, you can
   provide an integer value that is greater than 0. This value will translate into a percentage,
   e.g [60] == 60% of the original image size and [200] == 200% of the original image size.

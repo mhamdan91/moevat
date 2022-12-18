@@ -29,12 +29,19 @@ def write_results(output_name: str, labels_dict: typing.Dict):
 
 def load_existing_labels(output_name: str) -> typing.Dict:
     existing_labels = {}
+    existing_labels_dict = {}
+    file_format = os.path.splitext(output_name)[-1].lower()
     if os.path.isfile(output_name):
         with open(output_name) as f:
-            existing_labels = list(csv.DictReader(f))
-    existing_labels_dict = {}
+            if file_format == '.csv':
+                existing_labels = list(csv.DictReader(f))
+            elif file_format == '.json':
+                existing_labels = json.load(f)
+            else:
+                return existing_labels_dict
     if existing_labels:
-        for _dict in existing_labels:
+        iterator = existing_labels if file_format == '.csv' else existing_labels.values()
+        for _dict in iterator:
             image_name = os.path.splitext(_dict.get('image_name'))[0]
             existing_labels_dict[image_name] = _dict
     return existing_labels_dict
@@ -146,7 +153,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
 
         if label > -1:
             klass = classes[label] if classes else label
-            labels_dict[image_path] = {"image_name": full_image_name, "label": label, "class": klass}
+            labels_dict[image_path] = {"image_name": full_image_name, "label": str(label), "class": str(klass)}
             logger.info(f" Labeled: {len(labels_dict)} out of {num_items} | {labels_dict[image_path]}")
             # Cache labeled data...
             tmp = {}
@@ -196,5 +203,5 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
             class_labels.append(value.get('class', ''))
         action = 'Moving' if command == shutil.move else 'Copying'
         logger.info(f"{action} data from source directory to destination directory...")
-        transfer_data(data={'image_path': paths, 'class_label': class_labels}, threads=-1)
+        transfer_data(data={'image_path': paths, 'class_label': class_labels}, threads=1)
 
