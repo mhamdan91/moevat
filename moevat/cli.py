@@ -115,7 +115,7 @@ class NotRequiredIf(click.Option):
                                         help="Output file path where labels will be to stored. (supported file formats are [csv, json])")                                 
 @click.option('--labels-path',  '-l',   type=click.Path(exists=True, dir_okay=False, resolve_path=True),
                                         help="(optional) Required only if you wish to provide human readable classes to your data. " \
-                                             "See example labels yaml file: https://github.com/mhamdan91/moevat")
+                                             "See example labels yaml file: https://github.com/mhamdan91/moevat/blob/main/labels.yml")
 @click.option('--dst-folder',   '-d',   type=click.Path(exists=False, file_okay=False, resolve_path=False),
                                         help="(optional) Destination folder for labeled images.")
 @click.option('--data-transfer','-t',   type=click.Choice(['cp', 'mv', 'none'], case_sensitive=False),
@@ -141,7 +141,7 @@ class NotRequiredIf(click.Option):
 def cli(images_path: str, output_name: str, labels_path: str, data_transfer: bool,
         dst_folder, window_size, hide_labels, no_loop: str, show_usage: bool, *args: typing.Any, **kwargs: typing.Any) -> None:
     if show_usage:
-        logger.info(
+        print(
         """ 
 This tool allows you to quickly label images of up to 10 classes and this is basically because we 
 only have 10 numbers in NumPad :(O). If you have more than 10 classes, you can choose one class 
@@ -159,7 +159,7 @@ To use this tool you need to provide:
   e.g [60] == 60% of the original image size and [200] == 200% of the original image size.
 - By default the tool will display the class names along with their human readable labels if
   you provide a labels.yaml file. This file contains classes and human readable labels in 
-  the following format: (you can download this example from: https://github.com/mhamdan91/moevat)
+  the following format: (you can download this example from: https://github.com/mhamdan91/moevat/blob/main/labels.yml)
     
     # ** Good class names **
     classes:
