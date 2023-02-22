@@ -2,8 +2,8 @@ import os
 from setuptools import setup, find_packages
 from pip._internal.network.session import PipSession
 from pip._internal.req.req_file import parse_requirements
+from moevat.version import __version__
 
-VERSION = "1.0.1"
 PROJECT_DIR = os.path.dirname(os.path.realpath(__file__))
 REQUIREMENTS = parse_requirements(os.path.join(PROJECT_DIR, 'requirements.txt'), session=PipSession())
 DESCRIPTION = 'Python libary to quickly label data/images.'
