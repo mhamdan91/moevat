@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "Moevat",
             "type": "python",
             "request": "launch",
@@ -20,6 +28,8 @@
                 "cp",
                 "-d",
                 "unittest\\labeled_data",
+                "-m",
+                "-s"
                 // "-l",
                 // "labels.yml",
                 // "-u"

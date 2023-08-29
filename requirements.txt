@@ -4,3 +4,4 @@ click==8.0.1
 PyYAML==6.0
 moethread
 screeninfo
+pynput
