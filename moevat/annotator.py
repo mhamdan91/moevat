@@ -58,8 +58,8 @@ def rotate_text(image, line, _pos):
     img = np.zeros_like(image, dtype=np.uint8)
     (w, h), _ = cv2.getTextSize(f"{line[2]:.2f} px", cv2.FONT_HERSHEY_SIMPLEX, 0.5, line_width)
     cv2.rectangle(img, (int(_pos[0]+w/0.9), int(_pos[1]-h/0.6)),
-                  (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9)), (255, 10, 10), -1)
-    cv2.putText(img, f"{line[2]:.2f} px", tuple(_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), line_width)
+                  (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9)), (227, 156, 66), -1)
+    cv2.putText(img, f"{line[2]:.2f} px", tuple(_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (28, 20, 8), line_width, cv2.LINE_4)
     M = cv2.getRotationMatrix2D(_pos, angle, 1)
     return cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
 
@@ -67,11 +67,12 @@ def redraw_image(image: np.ndarray):
     for line in lines:
         px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
         _pos = (10 + line[0][0], line[0][1]) if px_x_pos < px_y_pos else (10 + line[1][0], line[1][1])
-        # px_x_pos, px_y_pos = abs(line[1][0] - line[0][0]), abs(line[1][1] - line[0][1])
         midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
         text_position = (midpoint[0] + 20, midpoint[1] - 40)  # Adjust the text position here
         cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
         rotated_txt = rotate_text(image, line, text_position)
+        non_zeros = np.nonzero(rotated_txt)
+        image[non_zeros] = 0
         image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
         # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
                     # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
@@ -250,8 +251,9 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
             label = key - 48
             forward += 1
         elif key == 26 and measure: # Update image after undo ctrl+z...
-            lines.pop()
-            redraw_image(resized_image)
+            if lines:
+                lines.pop()
+                redraw_image(resized_image)
             continue
         else:
             logger.warning(f"Invalid keystroke.")
