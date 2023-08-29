@@ -9,11 +9,26 @@ from moethread import parallel_call
 
 logger = logging.getLogger(__name__)
 
-def resize_img(image, percentage):
-    shape = image.shape
-    y = int(shape[0] * percentage / 100)
-    x = int(shape[1] * percentage / 100)
-    return cv2.resize(image, (x, y), interpolation=cv2.INTER_AREA)
+def overlay_text(image, text, pos, font_color=(255, 255, 255)):
+    # Calculate the font scale based on the image dimensions
+    font_scale = min(image.shape[1], image.shape[0]) / 1100.0  # Adjust 800 as needed
+
+    # Set the font, color, thickness, and other parameters
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_thickness = 1
+
+    # Calculate the size of the text bounding box
+    text_size = cv2.getTextSize(text, font, font_scale, font_thickness)[0]
+    text_width, text_height = text_size
+    # Calculate the position to center the text
+    text_x = text_width + pos[1]
+    text_y = text_height + pos[0]
+
+    cv2.putText(image, text, pos, font, font_scale, font_color, font_thickness)
+
+
+def resize_img(image, size):
+    return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
 
 def write_results(output_name: str, labels_dict: typing.Dict):
     if os.path.splitext(output_name)[-1].lower() == '.csv':
@@ -47,7 +62,8 @@ def load_existing_labels(output_name: str) -> typing.Dict:
     return existing_labels_dict
 
 def annotate(images_path: str, output_name: str, classes: typing.Any, data_transfer: str,
-             dst_folder: str, window_size: int, show_class_names: bool=True, loop: bool=True):
+             dst_folder: str, window_size: int, monitor_dims: tuple, show_class_names: bool=True,
+             loop: bool=True, measure: bool=False, save_overlay: bool=False):
     """
         https://docs.opencv.org/4.x/d4/da8/group__imgcodecs.html
 
@@ -115,10 +131,14 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         description_area[:,:, 0] = 245
         description_area[:,:, 1] = 245
         description_area[:,:, 2] = 245
+        y_start = int(window_size[1]/360 * 15) # Smallest supported y-size is 360...
+        y_end = int(y_start * 35/15) # Smallest supported y-size is 360...
         img = np.vstack((description_area, img))
-        cv2.putText(img, f"CURRENT ITEM: {forward + 1} | OUT OF {num_items} || CLICK ESACPE TO TERMINATE LABELING SESSION",
-                    (7, 30), font, fontScale, (0, 0, 180), thickness, lineType)
-        cv2.putText(img, "NEXT: RIGHT/UP ARROW | PREVIOUS: LEFT/DOWN ARROW", (7, 60), font, fontScale, (0, 180, 0), thickness, lineType)
+        img = resize_img(img, window_size)
+        text = f"CURRENT ITEM: {forward + 1} | OUT OF {num_items} || CLICK ESACPE TO TERMINATE LABELING SESSION"
+        overlay_text(img, text, (7, y_start), (0, 0, 180))
+        text = "NEXT: RIGHT/UP ARROW | PREVIOUS: LEFT/DOWN ARROW"
+        overlay_text(img, text, (7, y_end), (0, 180, 0))
         if show_class_names:
             for i, tooltip_string in enumerate(tooltip_strings):
                 red = min(255, 75*i)
@@ -126,8 +146,10 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
                 cv2.putText(img, tooltip_string, (7, 100 + 25*i), font, 0.6, (150, green, red), thickness, lineType)
         # Show GUI...
         title = f"Moevat"
-        cv2.imshow(title, resize_img(img, window_size))
-        cv2.moveWindow(title, 250, 96)
+        top_left_x = (monitor_dims[0] - window_size[0]) // 2
+        top_left_y = (monitor_dims[1] - window_size[1]) // 2
+        cv2.imshow(title, img)
+        cv2.moveWindow(title, top_left_x, top_left_y)
         key = cv2.waitKeyEx(0)
         label = -1
         # up or right
@@ -138,7 +160,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
             forward -= 1
             forward = forward % num_items
         # escape
-        elif key == 27:
+        elif key == 27 or key == ord('q'):
             cv2.destroyAllWindows()
             break
         elif 47 < key < 58:
@@ -168,7 +190,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
             cv2.moveWindow("THANK YOU", 350, 300)
             cv2.waitKey(2000)
             break
-    
+
     cv2.destroyAllWindows()
     new_labeled_data = labels_dict.copy()
     if new_labeled_data:

@@ -2,5 +2,6 @@ dist/
 build/
 moevat.egg-info/
 venv_movevat/
-test_data/*
+unittest/*
+!unittest/unittest
 __pycache__/

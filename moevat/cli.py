@@ -21,7 +21,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
+import sys
+sys.path.append("..\\moevat")
 import click
 import typing
 import yaml
@@ -29,10 +30,10 @@ import os
 import logging
 from pathlib import Path
 from moevat.annotator import annotate
+from screeninfo import get_monitors
 import ctypes
 
-
-
+DEFAULT_WINSIZE     = "1024,768"
 CONTEXT_SETTINGS    = dict(help_option_names=['-h', '--help'], max_content_width=150)
 FILE_TYPE           = click.Path(exists=True, dir_okay=False, resolve_path=True)
 DIRECTORY_TYPE      = click.Path(exists=True, file_okay=False, resolve_path=True)
@@ -41,6 +42,19 @@ logger = logging.getLogger(__name__)
 # logger_format='[%(asctime)s | %(name)s | LN%(lineno)s | %(levelname)s]: %(message)s'
 logger_format='[%(asctime)s | MOEVAT | %(levelname)s]: %(message)s'
 logging.basicConfig(level=logging.INFO, format=logger_format)
+
+def _parse_winsize(window_size: str):
+    return tuple([int(x) for x in window_size.split(',')])
+
+def _get_monitor_dims():
+    w, h = 1920, 1080
+    monitors = get_monitors()
+    for monitor in monitors:
+        if monitor.is_primary:
+            w = monitors[0].width
+            h = monitors[0].height
+            break
+    return (w, h)
 
 # Control help message...
 def command_required_option_from_option(require_name, require_map):
@@ -125,13 +139,19 @@ class NotRequiredIf(click.Option):
                                         show_default=True,
                                         help="(optional) Copy [cp] or move [mv] data from source to destination folder " \
                                              "after completing labeling.")
-@click.option('--window-size',  '-w',   type=int,
-                                        default=60,
+@click.option('--window-size',  '-w',   type=click.Choice(["640,480", "800,600", "1024,768", "1280,960","1600,1200",
+                                                           "640,360", "960,540", "1280,720", "1920,1080", "2560,1440"],
+                                                           case_sensitive=False),
+                                        default=DEFAULT_WINSIZE,
                                         show_default=True,
-                                        help="(optional) Percentage (integer greater than zero) of original image size. " \
-                                             "Default display 60% of the original image size.")
+                                        help="(optional) window size of displayed image. " \
+                                             "Default display is (320,240) pixels of original image size.")
 @click.option('--hide-labels',  '-x',   is_flag=True,
                                         help="(optional) Flag to hide class/label names while annotating.")
+@click.option('--measure',      '-m',   is_flag=True,
+                                        help="(optional) Draw lines of pixel measurements ontop of image.")
+@click.option('--save-overlay', '-s',   is_flag=True,
+                                        help="(optional) Save overlayed measurement ontop of image.")
 @click.option('--no-loop',      '-n',   is_flag=True,
                                         help="(optional) Flag to stop looping over the dataset. " \
                                              "By default user can navigate forward and backward, "
@@ -139,7 +159,8 @@ class NotRequiredIf(click.Option):
 @click.option('--show-usage',   '-u',   is_flag=True,
                                         help="(optional) Show detailed usage of the tool with examples and exit.")
 def cli(images_path: str, output_name: str, labels_path: str, data_transfer: bool,
-        dst_folder, window_size, hide_labels, no_loop: str, show_usage: bool, *args: typing.Any, **kwargs: typing.Any) -> None:
+        dst_folder, window_size, hide_labels, measure, save_overlay, 
+        no_loop: str, show_usage: bool, *args: typing.Any, **kwargs: typing.Any) -> None:
     if show_usage:
         print(
         """ 
@@ -157,7 +178,7 @@ To use this tool you need to provide:
   destination folder to transfer images to, this would be specifying the `dst-folder` option.
 - If you wish to resize window size that displays image and labeling instructions, you can 
   provide an integer value that is greater than 0. This value will translate into a percentage, 
-  e.g [60] == 60% of the original image size and [200] == 200% of the original image size.
+  e.g [60] == 60% of the original display size and [200] == 200% of the original display size.
 - By default the tool will display the class names along with their human readable labels if
   you provide a labels.yaml file. This file contains classes and human readable labels in 
   the following format: (you can download this example from: https://github.com/mhamdan91/moevat/blob/main/labels.yml)
@@ -215,7 +236,7 @@ Example use (in a terminal run the following command):
 
         """)
         return
-    
+    window_size = _parse_winsize(window_size)
     logger.info("MAKE SURE NumLock is ON...")
     loop = False if no_loop else True
     show_class_names = False if hide_labels else True
@@ -228,9 +249,9 @@ Example use (in a terminal run the following command):
     output_dir.mkdir(parents=True, exist_ok=True)
     output_name = f''.join(tmp)
 
-    if window_size < 1:
-        logger.warning(f"Received improper window size [{window_size}], setting to default: [60] (%).")
-        window_size = 60
+    if window_size[0]/window_size[1] not in [16/9, 4/3]:
+        logger.warning(f"Received improper window size [{window_size}], setting to default: ({DEFAULT_WINSIZE}).")
+        window_size = _parse_winsize(DEFAULT_WINSIZE)
     classes = {}
     if labels_path:
         try:
@@ -242,7 +263,9 @@ Example use (in a terminal run the following command):
         else:
             classes = classes.get(next(iter(classes)), {})
     logger.info(f"Labeled data will be saved to: {os.path.abspath(output_name)}")
-    annotate(images_path, output_name, classes, data_transfer, dst_folder, window_size, show_class_names, loop)
+    monitor_dims = _get_monitor_dims()
+    annotate(images_path, output_name, classes, data_transfer, dst_folder,
+             window_size, monitor_dims, show_class_names, loop, measure, save_overlay)
 
 def main() -> None:
     cli(prog_name='moevat')
