@@ -170,15 +170,17 @@ to be all others and reclassfiy others afterwards. This tool is meant for quick 
 not meant to be an extensive and manually controlled GUI. 
 
 To use this tool you need to provide:
+- To show usage message run the following command `moevat -u`
 - a directory containing images to label.
 - an output file path to store labeled images in and this file can only be of type [json, csv]
 - If you mislabel an image and wish to correct this, simply go back to that image and apply the new label.
-- If you wish to copy or move labeled images after completing labeling, you must specify the 
-  `data-transfer` option where (cp -> copy, and mv -> move). You also need to specify a 
+- If you wish to copy or move labeled images after completing labeling, you must specify the
+  `data-transfer` option where (**cp** -> copy, and **mv** -> move). You also need to specify a
   destination folder to transfer images to, this would be specifying the `dst-folder` option.
-- If you wish to resize window size that displays image and labeling instructions, you can 
-  provide an integer value that is greater than 0. This value will translate into a percentage, 
-  e.g [60] == 60% of the original display size and [200] == 200% of the original display size.
+- If you wish to resize window size that displays image and labeling instructions, you can
+  choose from the preset resolutions.
+- If you wish to overlay measurements in pixels on top of image, you can provide the `measure` flag.
+- If you wish to save overlayed measurements, then you can provide the `save-overlay` flag. Note this only saves to a json format.
 - By default the tool will display the class names along with their human readable labels if
   you provide a labels.yaml file. This file contains classes and human readable labels in 
   the following format: (you can download this example from: https://github.com/mhamdan91/moevat/blob/main/labels.yml)
