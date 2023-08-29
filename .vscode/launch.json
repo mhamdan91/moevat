@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false,
+        },
+        {
             "name": "Moevat",
             "type": "python",
             "request": "launch",
@@ -13,13 +21,15 @@
             "justMyCode": false,
             "args":[
                 "-i",
-                "test_data\\images",
+                "unittest\\images",
                 "-o",
-                "test_data\\labels.json",
+                "unittest\\labeled_data\\labels.json",
                 "-t",
                 "cp",
                 "-d",
-                "test_data\\my_labeled_data",
+                "unittest\\labeled_data",
+                "-m",
+                "-s"
                 // "-l",
                 // "labels.yml",
                 // "-u"

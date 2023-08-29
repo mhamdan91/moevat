@@ -3,3 +3,5 @@ numpy==1.21.6
 click==8.0.1
 PyYAML==6.0
 moethread
+screeninfo
+pynput

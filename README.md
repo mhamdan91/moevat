@@ -34,8 +34,9 @@ To use this tool you need to provide:
   `data-transfer` option where (**cp** -> copy, and **mv** -> move). You also need to specify a
   destination folder to transfer images to, this would be specifying the `dst-folder` option.
 - If you wish to resize window size that displays image and labeling instructions, you can
-  provide an integer value that is greater than 0. This value will translate into a percentage,
-  e.g [60] == 60% of the original image size and [200] == 200% of the original image size.
+  choose from the preset resolutions.
+- If you wish to overlay measurements in pixels on top of image, you can provide the `measure` flag.
+- If you wish to save overlayed measurements, then you can provide the `save-overlay` flag. Note this only saves to a json format.
 - By default the tool will display the class names along with their human readable labels if
   you provide a labels.yaml file. This file contains classes and human readable labels in
   the following format: (See example: [labels.yaml](https://github.com/mhamdan91/moevat/blob/main/labels.yml))
