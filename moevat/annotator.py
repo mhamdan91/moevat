@@ -11,13 +11,16 @@ from pynput import mouse, keyboard
 
 logger = logging.getLogger(__name__)
 lines = []
-x_scaling, y_scaling = 1, 1
-redrawn_image = None # Training image...
 drawing = False
-start_x, start_y = -1, -1
-window_name = ''
+redrawn_img = None
+annotated_img = None
 line_width = 2
+window_name = ''
 x_pos, y_pos = -1,-1
+measurement_length = -1
+start_x, start_y = -1, -1
+x_scaling, y_scaling = 1, 1
+
 
 # Keyboard listener to detect Ctrl + Z
 def on_key_release(key):
@@ -26,21 +29,18 @@ def on_key_release(key):
         # redraw_image()
         pass
 
-# Set up the listener for Ctrl + Z
-keyboard_listener = keyboard.Listener(on_release=on_key_release)
-keyboard_listener.start()
-
-
+def resize_img(image, size):
+    return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
 
 def draw_line(event, x, y, flags, param):
-    global drawing, start_x, start_y, redrawn_image
+    global drawing, start_x, start_y, redrawn_img
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
         start_x, start_y = x, y
 
     elif event == cv2.EVENT_MOUSEMOVE:
         if drawing:
-            image_copy = np.copy(redrawn_image)
+            image_copy = np.copy(redrawn_img)
             cv2.line(image_copy, (start_x, start_y), (x, y), (0, 0, 255), line_width)
             cv2.imshow(window_name, image_copy)
 
@@ -51,7 +51,7 @@ def draw_line(event, x, y, flags, param):
         lines.append(((start_x, start_y), (end_x, end_y)))
         length = np.sqrt(((end_x - start_x)*x_scaling)**2 + ((end_y - start_y)*y_scaling)**2)
         lines[-1] = lines[-1] + (length,)
-        redraw_image(redrawn_image)
+        redraw_image(redrawn_img)
 
 def calculate_angle(point1, point2):
     dx = point2[0] - point1[0]
@@ -60,34 +60,51 @@ def calculate_angle(point1, point2):
 
 def rotate_text(image, line, _pos: List):
     # Create a zeros image
-    angle = 270
+    right_angle, left_angle, straight_angle = False, False, False
     _angle = calculate_angle(line[0], line[1])
     angle = abs(_angle)
     angle = 180 - angle if angle > 90 else angle
     if _angle == angle or _angle < -90 < angle:
         angle = -angle
+        left_angle = True
+    elif abs(_angle) != abs(angle):
+        right_angle = True
+    else:
+        straight_angle = True
+
     img = np.zeros_like(image, dtype=np.uint8)
     (w, h), _ = cv2.getTextSize(f"{line[2]:.2f} px", cv2.FONT_HERSHEY_SIMPLEX, 0.5, line_width)
-    cv2.rectangle(img, (int(_pos[0]+w/0.9), int(_pos[1]-h/0.6)),
-                  (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9)), (227, 156, 66), -1)
+    if 80 < abs(angle) < 100 and straight_angle:
+        start_point = (int(_pos[0]+w/0.9), int(_pos[1]-h/0.9))
+        end_point = (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9))
+    elif 0 <= abs(angle) <= 5 or left_angle:
+        _pos = [_pos[0] - 70, _pos[1] + 50]
+        start_point = (int(_pos[0]+w/0.9), int(_pos[1]-h/0.9))
+        end_point = (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9))
+    else:
+        _pos = [_pos[0] - 40, _pos[1] + 100]
+        start_point = (int(_pos[0]+w/0.9), int(_pos[1]-h/0.9))
+        end_point = (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9))
+    cv2.rectangle(img, start_point, end_point , (227, 156, 66), -1)
     cv2.putText(img, f"{line[2]:.2f} px", tuple(_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (28, 20, 8), line_width, cv2.LINE_4)
     M = cv2.getRotationMatrix2D(_pos, angle, 1)
     return cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
 
 def redraw_image(image: np.ndarray):
+    global annotated_img
     for line in lines:
         px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
         _pos = [10 + line[0][0], line[0][1]] if px_x_pos < px_y_pos else [10 + line[1][0], line[1][1]]
         midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
-        text_position = [midpoint[0] + 20, midpoint[1] - 40]  # Adjust the text position here
+        text_position = [midpoint[0] + 20, midpoint[1] - 70]  # Adjust the text position here
         cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
         rotated_txt = rotate_text(image, line, text_position)
         non_zeros = np.nonzero(rotated_txt)
         image[non_zeros] = 0
-        image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+        annotated_img = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
         # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
                     # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
-    cv2.imshow(window_name, image)
+    cv2.imshow(window_name, annotated_img)
 
 def overlay_text(image, text, pos, font_color=(255, 255, 255)):
     # Calculate the font scale based on the image dimensions
@@ -104,11 +121,8 @@ def overlay_text(image, text, pos, font_color=(255, 255, 255)):
 
     cv2.putText(image, text, pos, font, font_scale, font_color, font_thickness)
 
-def resize_img(image, size):
-    return cv2.resize(image, size, interpolation=cv2.INTER_AREA)
-
-def write_results(output_name: str, labels_dict: typing.Dict):
-    if os.path.splitext(output_name)[-1].lower() == '.csv':
+def write_results(output_name: str, labels_dict: typing.Dict, measure: bool=False):
+    if os.path.splitext(output_name)[-1].lower() == '.csv' and not measure:
         header = ['image_name', 'label', 'class']
         with open(output_name, newline='', mode='w') as of:
             writer = csv.DictWriter(of, fieldnames=header)
@@ -157,7 +171,12 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         Radiance HDR - .hdr, .pic (always supported)
 
     """
-    global redrawn_image, x_pos, y_pos, window_name, line_width, y_scaling, x_scaling, lines
+    if measure:
+        # Set up the listener for Ctrl + Z
+        keyboard_listener = keyboard.Listener(on_release=on_key_release)
+        keyboard_listener.start()
+
+    global redrawn_img, x_pos, y_pos, window_name, line_width, y_scaling, x_scaling, lines
     window_width = 130
     tooltip_string = ""
     if classes and show_class_names:
@@ -221,7 +240,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         overlay_text(resized_image, text, (7, y_start), (0, 0, 180))
         text = "NEXT: RIGHT/UP ARROW | PREVIOUS: LEFT/DOWN ARROW"
         overlay_text(resized_image, text, (7, y_end), (0, 180, 0))
-        redrawn_image = np.copy(resized_image)
+        redrawn_img = np.copy(resized_image)
         x_scaling, y_scaling = stacked_img.shape[1]/window_size[0], stacked_img.shape[0]/window_size[1]
 
         if show_class_names:
@@ -237,12 +256,12 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         # Need to track only one time...
         if key == -1000 or key != 26:
             lines = []
-            cv2.imshow(window_name, redrawn_image)
+            cv2.imshow(window_name, redrawn_img)
             cv2.moveWindow(window_name, x_pos, y_pos)
             cv2.setMouseCallback(window_name, draw_line)
         # Without drawing measurements...
         if not measure:
-            cv2.imshow(window_name, redrawn_image)
+            cv2.imshow(window_name, redrawn_img)
             cv2.moveWindow(window_name, x_pos, y_pos)
 
         key = cv2.waitKeyEx(0)
@@ -275,6 +294,16 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         if label > -1:
             klass = classes[label] if classes else label
             labels_dict[image_path] = {"image_name": full_image_name, "label": str(label), "class": str(klass)}
+            if measure:
+                labels_dict[image_path]['measurements'] = {}
+                for i, line in enumerate(lines):
+                   labels_dict[image_path]['measurements'][str(i+1)] = {'length': float(f"{line[-1]:0.1f}"),
+                                                                        'coords': f"[{line[0]}, {line[1]}]"} 
+            if save_overlay:
+                image_name = f"annotated_{image_path.split(os.sep)[-1]}"
+                dist_path = Path(os.path.join(dst_folder, str(label)))
+                dist_path.mkdir(parents=True, exist_ok=True)
+                cv2.imwrite(os.path.join(dist_path, image_name), annotated_img)
             logger.info(f" Labeled: {len(labels_dict)} out of {num_items} | {labels_dict[image_path]}")
             # Cache labeled data...
             tmp = {}
@@ -296,7 +325,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         logger.info("Writing data to file...")
         labels_dict.update(existing_labels_dict)
         write_results(output_name, labels_dict)
-    if data_transfer in ['mv', 'cp'] and new_labeled_data:
+    if data_transfer in ['mv', 'cp'] and new_labeled_data and not save_overlay:
         if not os.path.isdir(dst_folder):
             _dst_folder = Path(dst_folder)
             _dst_folder.mkdir(parents=True, exist_ok=True)
