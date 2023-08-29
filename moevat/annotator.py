@@ -101,10 +101,11 @@ def redraw_image(image: np.ndarray):
         rotated_txt = rotate_text(image, line, text_position)
         non_zeros = np.nonzero(rotated_txt)
         image[non_zeros] = 0
-        annotated_img = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+        image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+        annotated_img = np.copy(image)
         # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
                     # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
-    cv2.imshow(window_name, annotated_img)
+    cv2.imshow(window_name, image)
 
 def overlay_text(image, text, pos, font_color=(255, 255, 255)):
     # Calculate the font scale based on the image dimensions
