@@ -10,34 +10,36 @@ from pynput import mouse, keyboard
 
 logger = logging.getLogger(__name__)
 lines = []
-line_width = 1
 x_scaling, y_scaling = 1, 1
-t_image = None # Training image...
-original_image = None
+redrawn_image = None # Training image...
 drawing = False
 start_x, start_y = -1, -1
 window_name = ''
 line_width = 2
 x_pos, y_pos = -1,-1
-delete_line = False
-overlayed_img = None
 
 # Keyboard listener to detect Ctrl + Z
 def on_key_release(key):
     if "\\x1a'" in str(key):
-        pass
         # lines.pop() if lines else None
         # redraw_image()
+        pass
+
+# Set up the listener for Ctrl + Z
+keyboard_listener = keyboard.Listener(on_release=on_key_release)
+keyboard_listener.start()
+
+
 
 def draw_line(event, x, y, flags, param):
-    global drawing, start_x, start_y, t_image
+    global drawing, start_x, start_y, redrawn_image
     if event == cv2.EVENT_LBUTTONDOWN:
         drawing = True
         start_x, start_y = x, y
 
     elif event == cv2.EVENT_MOUSEMOVE:
         if drawing:
-            image_copy = np.copy(t_image)
+            image_copy = np.copy(redrawn_image)
             cv2.line(image_copy, (start_x, start_y), (x, y), (0, 0, 255), line_width)
             cv2.imshow(window_name, image_copy)
 
@@ -48,23 +50,32 @@ def draw_line(event, x, y, flags, param):
         lines.append(((start_x, start_y), (end_x, end_y)))
         length = np.sqrt(((end_x - start_x)*x_scaling)**2 + ((end_y - start_y)*y_scaling)**2)
         lines[-1] = lines[-1] + (length,)
-        redraw_image(t_image)
-        
+        redraw_image(redrawn_image)
+
+def rotate_text(image, line, _pos):
+    # Create a zeros image
+    angle = 270
+    img = np.zeros_like(image, dtype=np.uint8)
+    (w, h), _ = cv2.getTextSize(f"{line[2]:.2f} px", cv2.FONT_HERSHEY_SIMPLEX, 0.5, line_width)
+    cv2.rectangle(img, (int(_pos[0]+w/0.9), int(_pos[1]-h/0.6)),
+                  (int(_pos[0]-w*0.1), int(_pos[1]+h/0.9)), (255, 10, 10), -1)
+    cv2.putText(img, f"{line[2]:.2f} px", tuple(_pos), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 0), line_width)
+    M = cv2.getRotationMatrix2D(_pos, angle, 1)
+    return cv2.warpAffine(img, M, (img.shape[1], img.shape[0]))
 
 def redraw_image(image: np.ndarray):
     for line in lines:
         px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
         _pos = (10 + line[0][0], line[0][1]) if px_x_pos < px_y_pos else (10 + line[1][0], line[1][1])
+        # px_x_pos, px_y_pos = abs(line[1][0] - line[0][0]), abs(line[1][1] - line[0][1])
+        midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
+        text_position = (midpoint[0] + 20, midpoint[1] - 40)  # Adjust the text position here
         cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
-        cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
+        rotated_txt = rotate_text(image, line, text_position)
+        image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+        # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
+                    # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
     cv2.imshow(window_name, image)
-
-# Set up the listener for Ctrl + Z
-keyboard_listener = keyboard.Listener(on_release=on_key_release)
-keyboard_listener.start()
-
-
 
 def overlay_text(image, text, pos, font_color=(255, 255, 255)):
     # Calculate the font scale based on the image dimensions
@@ -134,7 +145,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         Radiance HDR - .hdr, .pic (always supported)
 
     """
-    global t_image, x_pos, y_pos, window_name
+    global redrawn_image, x_pos, y_pos, window_name, line_width, y_scaling, x_scaling, lines
     window_width = 130
     tooltip_string = ""
     if classes and show_class_names:
@@ -172,7 +183,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
     if not items:
         logger.warning("No items to label. If you wish to relabel, then delete the labels file in path. Early termination")
         return
-    key = 0
+    key = -1000 if measure else 0 # When drawing lines we only wanna callBack onetime...
     forward = 0
     labels_dict = {}
     num_items   = len(items)
@@ -180,35 +191,47 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
     dsize = int(50 * (75 + 25 * len(tooltip_strings)) / 90) if show_class_names else 40
     while forward < num_items:
         image_path = items[forward]
-        img = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
+        image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
         path_list = image_path.split(os.sep)
         full_image_name = path_list[-1]
-        description_area = img[:dsize, :]
+        description_area = image[:dsize, :]
         description_area[:,:, 0] = 245
         description_area[:,:, 1] = 245
         description_area[:,:, 2] = 245
+        if window_size[1] < 768:
+            line_width = 1
+        
         y_start = int(window_size[1]/360 * 15) # Smallest supported y-size is 360...
         y_end = int(y_start * 35/15) # Smallest supported y-size is 360...
-        img = np.vstack((description_area, img))
-        org_image = resize_img(img, window_size)
+        stacked_img = np.vstack((description_area, image))
+        resized_image = resize_img(stacked_img, window_size)
         text = f"CURRENT ITEM: {forward + 1} | OUT OF {num_items} || CLICK ESACPE TO TERMINATE LABELING SESSION"
-        overlay_text(org_image, text, (7, y_start), (0, 0, 180))
+        overlay_text(resized_image, text, (7, y_start), (0, 0, 180))
         text = "NEXT: RIGHT/UP ARROW | PREVIOUS: LEFT/DOWN ARROW"
-        overlay_text(org_image, text, (7, y_end), (0, 180, 0))
-        t_image = np.copy(org_image)
+        overlay_text(resized_image, text, (7, y_end), (0, 180, 0))
+        redrawn_image = np.copy(resized_image)
+        x_scaling, y_scaling = stacked_img.shape[1]/window_size[0], stacked_img.shape[0]/window_size[1]
+
         if show_class_names:
             for i, tooltip_string in enumerate(tooltip_strings):
                 red = min(255, 75*i)
                 green = min(25*i, 255)
-                cv2.putText(img, tooltip_string, (7, 100 + 25*i), font, 0.6, (150, green, red), thickness, lineType)
+                cv2.putText(stacked_img, tooltip_string, (7, 100 + 25*i),
+                            font, 0.6, (150, green, red), thickness, lineType)
         # Show GUI...
         window_name = f"Moevat"
         x_pos = (monitor_dims[0] - window_size[0]) // 2
         y_pos = (monitor_dims[1] - window_size[1]) // 2
-        if key != 26:
-            cv2.imshow(window_name, t_image)
+        # Need to track only one time...
+        if key == -1000 or key != 26:
+            lines = []
+            cv2.imshow(window_name, redrawn_image)
             cv2.moveWindow(window_name, x_pos, y_pos)
             cv2.setMouseCallback(window_name, draw_line)
+        # Without drawing measurements...
+        if not measure:
+            cv2.imshow(window_name, redrawn_image)
+            cv2.moveWindow(window_name, x_pos, y_pos)
 
         key = cv2.waitKeyEx(0)
         label = -1
@@ -226,15 +249,15 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         elif 47 < key < 58:
             label = key - 48
             forward += 1
-        elif key == 26: # Update image...
+        elif key == 26 and measure: # Update image after undo ctrl+z...
             lines.pop()
-            redraw_image(org_image)
+            redraw_image(resized_image)
+            continue
         else:
             logger.warning(f"Invalid keystroke.")
-            continue
         if loop:
             forward = forward % num_items
-        
+        cv2.destroyAllWindows()
 
         if label > -1:
             klass = classes[label] if classes else label
