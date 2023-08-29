@@ -4,6 +4,7 @@ import shutil
 import json
 import cv2
 import numpy as np
+from typing import Tuple, List, Any, Dict
 from pathlib import Path
 from moethread import parallel_call
 from pynput import mouse, keyboard
@@ -52,9 +53,19 @@ def draw_line(event, x, y, flags, param):
         lines[-1] = lines[-1] + (length,)
         redraw_image(redrawn_image)
 
-def rotate_text(image, line, _pos):
+def calculate_angle(point1, point2):
+    dx = point2[0] - point1[0]
+    dy = point2[1] - point1[1]
+    return np.arctan2(dy, dx) * 180 / np.pi
+
+def rotate_text(image, line, _pos: List):
     # Create a zeros image
     angle = 270
+    _angle = calculate_angle(line[0], line[1])
+    angle = abs(_angle)
+    angle = 180 - angle if angle > 90 else angle
+    if _angle == angle or _angle < -90 < angle:
+        angle = -angle
     img = np.zeros_like(image, dtype=np.uint8)
     (w, h), _ = cv2.getTextSize(f"{line[2]:.2f} px", cv2.FONT_HERSHEY_SIMPLEX, 0.5, line_width)
     cv2.rectangle(img, (int(_pos[0]+w/0.9), int(_pos[1]-h/0.6)),
@@ -66,9 +77,9 @@ def rotate_text(image, line, _pos):
 def redraw_image(image: np.ndarray):
     for line in lines:
         px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
-        _pos = (10 + line[0][0], line[0][1]) if px_x_pos < px_y_pos else (10 + line[1][0], line[1][1])
+        _pos = [10 + line[0][0], line[0][1]] if px_x_pos < px_y_pos else [10 + line[1][0], line[1][1]]
         midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
-        text_position = (midpoint[0] + 20, midpoint[1] - 40)  # Adjust the text position here
+        text_position = [midpoint[0] + 20, midpoint[1] - 40]  # Adjust the text position here
         cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
         rotated_txt = rotate_text(image, line, text_position)
         non_zeros = np.nonzero(rotated_txt)
