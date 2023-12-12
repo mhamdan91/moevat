@@ -24,12 +24,15 @@
                 "unittest\\images",
                 "-o",
                 "unittest\\labeled_data\\labels.json",
+                "-l",
+                "labels.yml",
                 "-t",
                 "cp",
                 "-d",
                 "unittest\\labeled_data",
                 "-m",
-                "-s"
+                // "-x",
+                // "-s"
                 // "-l",
                 // "labels.yml",
                 // "-u"
