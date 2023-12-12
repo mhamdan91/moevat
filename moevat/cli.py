@@ -126,7 +126,7 @@ class NotRequiredIf(click.Option):
                                         cls=NotRequiredIf,
                                         not_required_if='show_usage',
                                         show_default=True,
-                                        help="Output file path where labels will be to stored. (supported file formats are [csv, json])")                                 
+                                        help="Output file path where labels will be to stored. (supported file formats are [csv, json])")
 @click.option('--labels-path',  '-l',   type=click.Path(exists=True, dir_okay=False, resolve_path=True),
                                         help="(optional) Required only if you wish to provide human readable classes to your data. " \
                                              "See example labels yaml file: https://github.com/mhamdan91/moevat/blob/main/labels.yml")
@@ -151,7 +151,7 @@ class NotRequiredIf(click.Option):
 @click.option('--measure',      '-m',   is_flag=True,
                                         help="(optional) Draw lines of pixel measurements ontop of image.")
 @click.option('--save-overlay', '-s',   is_flag=True,
-                                        help="(optional) Save overlayed measurement ontop of image.")
+                                        help="(optional) Save overlayed measurement ontop of image as well as class labels.")
 @click.option('--no-loop',      '-n',   is_flag=True,
                                         help="(optional) Flag to stop looping over the dataset. " \
                                              "By default user can navigate forward and backward, "
@@ -159,15 +159,15 @@ class NotRequiredIf(click.Option):
 @click.option('--show-usage',   '-u',   is_flag=True,
                                         help="(optional) Show detailed usage of the tool with examples and exit.")
 def cli(images_path: str, output_name: str, labels_path: str, data_transfer: bool,
-        dst_folder, window_size, hide_labels, measure, save_overlay, 
+        dst_folder, window_size, hide_labels, measure, save_overlay,
         no_loop: str, show_usage: bool, *args: typing.Any, **kwargs: typing.Any) -> None:
     if show_usage:
         print(
-        """ 
-This tool allows you to quickly label images of up to 10 classes and this is basically because we 
-only have 10 numbers in NumPad :(O). If you have more than 10 classes, you can choose one class 
+        """
+This tool allows you to quickly label images of up to 10 classes and this is basically because we
+only have 10 numbers in NumPad :(O). If you have more than 10 classes, you can choose one class
 to be all others and reclassfiy others afterwards. This tool is meant for quick labeling and is
-not meant to be an extensive and manually controlled GUI. 
+not meant to be an extensive and manually controlled GUI.
 
 To use this tool you need to provide:
 - To show usage message run the following command `moevat -u`
@@ -182,9 +182,9 @@ To use this tool you need to provide:
 - If you wish to overlay measurements in pixels on top of image, you can provide the `measure` flag.
 - If you wish to save overlayed measurements, then you can provide the `save-overlay` flag. Note this only saves to a json format.
 - By default the tool will display the class names along with their human readable labels if
-  you provide a labels.yaml file. This file contains classes and human readable labels in 
+  you provide a labels.yaml file. This file contains classes and human readable labels in
   the following format: (you can download this example from: https://github.com/mhamdan91/moevat/blob/main/labels.yml)
-    
+
     # ** Good class names **
     classes:
         0: "dog"
@@ -225,7 +225,7 @@ To use this tool you need to provide:
         9: "house without windows"
 
 - The tool will allow you navigate forward and backward, by default the tool allows you loop through
-  images as long as you not labeled them all. This means you can start from left -> right or 
+  images as long as you not labeled them all. This means you can start from left -> right or
   right -> left, i.e. from last-image --> first-image or from first-image -> last-image.
 - The tool will automatically cache data while you are labeling, and if you wish to end your labeling
   session, simply click on ESCAPE.
@@ -233,7 +233,7 @@ To use this tool you need to provide:
   you used in the previous session and the tool will only show images that have not been labeled yet.
 
 Example use (in a terminal run the following command):
-> moevat -i <images_dir> -o <output_file_path.csv> -t <cp_or_mv> -d <destination_folder> -l <path_to_labels.yaml>
+> moevat -i <images_dir> -o <output_file_path.csv> -t <cp_or_mv> -d <destination_folder> -l <path_to_labels.yml>
 
 
         """)
@@ -242,7 +242,7 @@ Example use (in a terminal run the following command):
     logger.info("MAKE SURE NumLock is ON...")
     loop = False if no_loop else True
     show_class_names = False if hide_labels else True
-    
+
     tmp = list(os.path.splitext(output_name))
     if tmp[-1].lower() not in ['.csv', '.json']:
         logger.warning(f'Unsupported file format [{tmp[-1]}]. Defaulting to [csv]. Supported formats are [csv, json].')

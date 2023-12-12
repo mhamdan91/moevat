@@ -92,19 +92,23 @@ def rotate_text(image, line, _pos: List):
 
 def redraw_image(image: np.ndarray):
     global annotated_img
-    for line in lines:
-        px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
-        _pos = [10 + line[0][0], line[0][1]] if px_x_pos < px_y_pos else [10 + line[1][0], line[1][1]]
-        midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
-        text_position = [midpoint[0] + 20, midpoint[1] - 70]  # Adjust the text position here
-        cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
-        rotated_txt = rotate_text(image, line, text_position)
-        non_zeros = np.nonzero(rotated_txt)
-        image[non_zeros] = 0
-        image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+    if lines:
+        for line in lines:
+            px_x_pos, px_y_pos = abs(line[1][0]-line[0][0]), abs(line[1][1]-line[0][1])
+            _pos = [10 + line[0][0], line[0][1]] if px_x_pos < px_y_pos else [10 + line[1][0], line[1][1]]
+            midpoint = ((line[0][0] + line[1][0]) // 2, (line[0][1] + line[1][1]) // 2)
+            text_position = [midpoint[0] + 20, midpoint[1] - 70]  # Adjust the text position here
+            cv2.line(image, line[0], line[1], (0, 0, 255), line_width)
+            rotated_txt = rotate_text(image, line, text_position)
+            non_zeros = np.nonzero(rotated_txt)
+            image[non_zeros] = 0
+            image = cv2.addWeighted(image, 1, rotated_txt, 1, 0)
+            annotated_img = np.copy(image)
+            # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
+                        # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
+    else:
+        # in case no lines...
         annotated_img = np.copy(image)
-        # cv2.putText(image, f"{line[2]:.2f} px", tuple(_pos),
-                    # cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), line_width)
     cv2.imshow(window_name, image)
 
 def overlay_text(image, text, pos, font_color=(255, 255, 255)):
@@ -177,7 +181,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         keyboard_listener = keyboard.Listener(on_release=on_key_release)
         keyboard_listener.start()
 
-    global redrawn_img, x_pos, y_pos, window_name, line_width, y_scaling, x_scaling, lines
+    global redrawn_img, annotated_img, x_pos, y_pos, window_name, line_width, y_scaling, x_scaling, lines
     window_width = 130
     tooltip_string = ""
     if classes and show_class_names:
@@ -219,9 +223,12 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
     forward = 0
     labels_dict = {}
     num_items   = len(items)
+    class_keys = [k + 48 for k in classes.keys()]
     # Description area size...
     dsize = int(50 * (75 + 25 * len(tooltip_strings)) / 90) if show_class_names else 40
     while forward < num_items:
+        # Reinitialize annoated_image, otherwise it'll copy from previous...
+        annotated_img = None
         image_path = items[forward]
         image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)
         path_list = image_path.split(os.sep)
@@ -232,7 +239,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         description_area[:,:, 2] = 245
         if window_size[1] < 768:
             line_width = 1
-        
+
         y_start = int(window_size[1]/360 * 15) # Smallest supported y-size is 360...
         y_end = int(y_start * 35/15) # Smallest supported y-size is 360...
         stacked_img = np.vstack((description_area, image))
@@ -255,7 +262,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         x_pos = (monitor_dims[0] - window_size[0]) // 2
         y_pos = (monitor_dims[1] - window_size[1]) // 2
         # Need to track only one time...
-        if key == -1000 or key != 26:
+        if (key == -1000 or key != 26) and measure:
             lines = []
             cv2.imshow(window_name, redrawn_img)
             cv2.moveWindow(window_name, x_pos, y_pos)
@@ -278,7 +285,7 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
         elif key == 27 or key == ord('q'):
             cv2.destroyAllWindows()
             break
-        elif 47 < key < 58:
+        elif key in class_keys:
             label = key - 48
             forward += 1
         elif key == 26 and measure: # Update image after undo ctrl+z...
@@ -299,8 +306,10 @@ def annotate(images_path: str, output_name: str, classes: typing.Any, data_trans
                 labels_dict[image_path]['measurements'] = {}
                 for i, line in enumerate(lines):
                    labels_dict[image_path]['measurements'][str(i+1)] = {'length': float(f"{line[-1]:0.1f}"),
-                                                                        'coords': f"[{line[0]}, {line[1]}]"} 
+                                                                        'coords': f"[{line[0]}, {line[1]}]"}
             if save_overlay:
+                if annotated_img is None:
+                    annotated_img = redrawn_img
                 image_name = f"annotated_{image_path.split(os.sep)[-1]}"
                 dist_path = Path(os.path.join(dst_folder, str(label)))
                 dist_path.mkdir(parents=True, exist_ok=True)
